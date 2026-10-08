@@ -1,0 +1,1913 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cypherpunk: a green-phosphor theme for Standard Notes</title>
+<meta name="description" content="A green-phosphor cypherpunk theme for Standard Notes, with optional digital-rain and CRT scanline layers. Preview it on a mock layout, then install it.">
+<meta name="theme-color" content="#050805">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23050805'/%3E%3Cpath d='M8 10.5l5.5 5.5L8 21.5' fill='none' stroke='%2300ff41' stroke-width='2.6'/%3E%3Crect x='16' y='19' width='8.5' height='2.8' fill='%2300ff41'/%3E%3C/svg%3E">
+<!--
+  A mock of the Standard Notes layout, used to preview the theme and by the
+  e2e tests. It is not the app: the stylesheet below is written for this page,
+  but it uses the app's element ids and class names wherever the theme or its
+  layers target them, and it reads the same CSS variables the app does, with
+  light defaults, so whatever the theme leaves alone looks like the default
+  theme.
+
+  Query string:
+    ?theme=none              no Cypherpunk (the default light look)
+    ?layers=rain,scanlines   layers to stack on top (also sent to the editor frame)
+    ?pane=navigation|items|editor   pane to show first on phones
+-->
+<style id="mock-app">
+:root {
+  color-scheme: light;
+
+  --sn-stylekit-theme-type: light;
+  --sn-stylekit-theme-name: light;
+  --sn-stylekit-background-color: #ffffff;
+  --sn-stylekit-foreground-color: #1c1d21;
+  --sn-stylekit-border-color: #dde0e5;
+  --sn-stylekit-shadow-color: #c4c6cb;
+  --sn-stylekit-contrast-background-color: #f3f4f6;
+  --sn-stylekit-contrast-foreground-color: #2a2b2f;
+  --sn-stylekit-contrast-border-color: #e2e3e6;
+  --sn-stylekit-secondary-background-color: #eceef1;
+  --sn-stylekit-secondary-foreground-color: #2a2b2f;
+  --sn-stylekit-secondary-border-color: #e2e3e6;
+  --sn-stylekit-secondary-contrast-background-color: #e2e3e6;
+  --sn-stylekit-editor-background-color: var(--sn-stylekit-background-color);
+  --sn-stylekit-editor-foreground-color: var(--sn-stylekit-foreground-color);
+  --sn-stylekit-paragraph-text-color: #46484d;
+  --sn-stylekit-info-color: #0a6cd4;
+  --sn-stylekit-info-color-darkened: #085bb4;
+  --sn-stylekit-info-contrast-color: #ffffff;
+  --sn-stylekit-info-backdrop-color: #0a6cd412;
+  --sn-stylekit-neutral-color: #6d7179;
+  --sn-stylekit-neutral-contrast-color: #ffffff;
+  --sn-stylekit-success-color: #0a7a63;
+  --sn-stylekit-success-contrast-color: #ffffff;
+  --sn-stylekit-warning-color: #e8a600;
+  --sn-stylekit-warning-contrast-color: #ffffff;
+  --sn-stylekit-danger-color: #c9232a;
+  --sn-stylekit-danger-contrast-color: #ffffff;
+  --sn-stylekit-danger-light-color: #f8e2e3;
+  --sn-stylekit-input-placeholder-color: #a3a6ac;
+  --sn-stylekit-input-border-color: #e0e2e5;
+  --sn-stylekit-scrollbar-thumb-color: #d6d8db;
+  --sn-stylekit-passive-color-0: #505257;
+  --sn-stylekit-passive-color-1: #70747b;
+  --sn-stylekit-passive-color-2: #b8bbc1;
+  --sn-stylekit-passive-color-3: #dde0e5;
+  --sn-stylekit-passive-color-4: #eceef1;
+  --sn-stylekit-passive-color-4-opacity-variant: #b8bbc140;
+  --sn-stylekit-passive-color-5: #f3f4f6;
+  --sn-stylekit-accessory-tint-color-1: #0a6cd4;
+  --sn-stylekit-accessory-tint-color-2: #e5638f;
+  --sn-stylekit-accessory-tint-color-3: #e8a600;
+  --sn-stylekit-accessory-tint-color-4: #6f47cc;
+  --sn-stylekit-accessory-tint-color-5: #17a370;
+  --sn-stylekit-accessory-tint-color-6: #ef8a4f;
+  --sn-stylekit-sans-serif-font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --sn-stylekit-monospace-font: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  --sn-stylekit-editor-font-family: var(--sn-stylekit-sans-serif-font);
+  --sn-stylekit-base-font-size: 0.8125rem;
+  --sn-stylekit-font-size-editor: 0.9375rem;
+  --sn-stylekit-general-border-radius: 4px;
+
+  --navigation-column-background-color: var(--sn-stylekit-secondary-background-color);
+  --navigation-section-title-color: var(--sn-stylekit-secondary-foreground-color);
+  --navigation-item-text-color: var(--sn-stylekit-secondary-foreground-color);
+  --navigation-item-count-color: var(--sn-stylekit-neutral-color);
+  --navigation-item-selected-background-color: #fcfcfd;
+  --items-column-background-color: var(--sn-stylekit-background-color);
+  --items-column-items-background-color: var(--sn-stylekit-background-color);
+  --items-column-border-left-color: var(--sn-stylekit-border-color);
+  --items-column-border-right-color: var(--sn-stylekit-border-color);
+  --items-column-search-background-color: var(--sn-stylekit-contrast-background-color);
+  --item-cell-selected-background-color: var(--sn-stylekit-contrast-background-color);
+  --item-cell-selected-border-left-color: var(--sn-stylekit-info-color);
+  --editor-header-bar-background-color: var(--sn-stylekit-background-color);
+  --editor-title-bar-border-bottom-color: var(--sn-stylekit-border-color);
+  --editor-title-input-color: var(--sn-stylekit-editor-foreground-color);
+  --editor-pane-background-color: var(--sn-stylekit-background-color);
+  --editor-pane-editor-background-color: var(--sn-stylekit-editor-background-color);
+  --editor-pane-editor-foreground-color: var(--sn-stylekit-editor-foreground-color);
+  --text-selection-color: var(--sn-stylekit-info-contrast-color);
+  --text-selection-background-color: var(--sn-stylekit-info-color);
+  --link-element-color: var(--sn-stylekit-info-color);
+  --normal-button-background-color: var(--sn-stylekit-background-color);
+  --popover-background-color: var(--sn-stylekit-background-color);
+  --popover-border-color: var(--sn-stylekit-border-color);
+  --separator-color: var(--sn-stylekit-border-color);
+
+  --radius: var(--sn-stylekit-general-border-radius);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+body {
+  margin: 0;
+  background-color: var(--sn-stylekit-background-color);
+  color: var(--sn-stylekit-foreground-color);
+  font-family: var(--sn-stylekit-sans-serif-font);
+  font-size: var(--sn-stylekit-base-font-size);
+  line-height: 1.45;
+}
+
+::selection {
+  background-color: var(--text-selection-background-color) !important;
+  color: var(--text-selection-color);
+}
+
+p {
+  color: var(--sn-stylekit-paragraph-text-color);
+}
+
+a {
+  color: var(--link-element-color);
+}
+
+button,
+input {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+code {
+  font-family: var(--sn-stylekit-monospace-font);
+}
+
+svg.icon {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.scroll {
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--sn-stylekit-scrollbar-thumb-color) transparent;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ---- Page frame: the bar and the app fill the first screen ------------- */
+
+.screen {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+  min-height: 540px;
+}
+
+.site-bar {
+  position: relative;
+  z-index: 3;
+  flex: none;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  padding: 9px 16px;
+  background-color: var(--sn-stylekit-secondary-background-color);
+  border-bottom: 1px solid var(--sn-stylekit-border-color);
+  font-size: 13px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.brand-mark {
+  width: 26px;
+  height: 26px;
+  flex: none;
+  color: var(--sn-stylekit-info-color);
+}
+
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.25;
+}
+
+.brand-name {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--sn-stylekit-foreground-color);
+  white-space: nowrap;
+}
+
+.brand-tagline {
+  font-size: 11.5px;
+  color: var(--sn-stylekit-neutral-color);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bar-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.bar-label {
+  margin-right: 4px;
+  color: var(--sn-stylekit-neutral-color);
+  font-size: 12px;
+}
+
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 30px;
+  padding: 0 11px 0 8px;
+  border: 1px solid var(--sn-stylekit-border-color);
+  border-radius: 15px;
+  background-color: var(--normal-button-background-color);
+  color: var(--sn-stylekit-foreground-color);
+  font-size: 12.5px;
+  white-space: nowrap;
+}
+
+.toggle:hover {
+  border-color: var(--sn-stylekit-info-color);
+}
+
+.switch {
+  position: relative;
+  width: 26px;
+  height: 14px;
+  flex: none;
+  border-radius: 7px;
+  background-color: var(--sn-stylekit-passive-color-2);
+  transition: background-color 0.15s;
+}
+
+.switch::before {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: var(--sn-stylekit-background-color);
+  transition: transform 0.15s;
+}
+
+[aria-pressed="true"] > .switch,
+[aria-checked="true"] > .switch {
+  background-color: var(--sn-stylekit-info-color);
+}
+
+[aria-pressed="true"] > .switch::before,
+[aria-checked="true"] > .switch::before {
+  transform: translateX(12px);
+  background-color: var(--sn-stylekit-info-contrast-color);
+}
+
+.install-link {
+  margin-left: 4px;
+}
+
+/* ---- The mock app ------------------------------------------------------- */
+
+#app {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+
+.main-ui-view {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  overflow: hidden;
+  background-color: var(--editor-header-bar-background-color);
+}
+
+.app-panes {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(170px, 220px) minmax(250px, 330px) minmax(0, 1fr);
+}
+
+.app-pane {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.phone-only {
+  display: none !important;
+}
+
+.icon-button {
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  flex: none;
+  padding: 0;
+  border: 1px solid var(--sn-stylekit-border-color);
+  border-radius: 50%;
+  background-color: var(--normal-button-background-color);
+  color: var(--sn-stylekit-neutral-color);
+}
+
+.icon-button:hover {
+  color: var(--sn-stylekit-foreground-color);
+  background-color: var(--sn-stylekit-contrast-background-color);
+}
+
+.icon-button.primary {
+  border-color: transparent;
+  background-color: var(--sn-stylekit-info-color);
+  color: var(--sn-stylekit-info-contrast-color);
+}
+
+.icon-button.plain {
+  border-color: transparent;
+  background-color: transparent;
+}
+
+/* Navigation */
+
+#navigation {
+  background-color: var(--navigation-column-background-color);
+  border-right: 1px solid var(--items-column-border-left-color);
+  user-select: none;
+}
+
+#navigation-content {
+  flex: 1;
+  min-height: 0;
+  padding-bottom: 12px;
+  background-color: var(--navigation-column-background-color);
+}
+
+#navigation-content > .sticky {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 12px 8px 16px;
+  background-color: var(--navigation-column-background-color);
+}
+
+.workspace {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--navigation-item-text-color);
+}
+
+.workspace small {
+  display: block;
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--sn-stylekit-neutral-color);
+}
+
+#navigation .section-title-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--navigation-section-title-color);
+}
+
+#navigation .tag {
+  display: block;
+  width: 100%;
+  padding: 0 14px 0 16px;
+  border: 0;
+  background-color: transparent;
+  text-align: left;
+}
+
+#navigation .tag > .tag-info {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 31px;
+}
+
+#navigation .tag > .tag-info > .tag-icon {
+  display: flex;
+  color: var(--sn-stylekit-neutral-color);
+}
+
+#navigation .tag > .tag-info > .title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--navigation-item-text-color);
+}
+
+#navigation .tag > .tag-info > .count {
+  font-size: 12px;
+  color: var(--navigation-item-count-color);
+}
+
+#navigation .tag:hover,
+#navigation .tag.selected {
+  background-color: var(--navigation-item-selected-background-color);
+}
+
+#navigation .tag.selected > .tag-info > .tag-icon {
+  color: var(--sn-stylekit-info-color);
+}
+
+#navigation .tag.selected > .tag-info > .count {
+  color: var(--sn-stylekit-foreground-color);
+  font-weight: 700;
+}
+
+.nav-footer {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 7px 10px;
+  border-top: 1px solid var(--separator-color);
+  background-color: var(--navigation-column-background-color);
+}
+
+.sync-status {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: var(--sn-stylekit-neutral-color);
+}
+
+.sync-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: var(--sn-stylekit-success-color);
+}
+
+/* Notes list */
+
+#items-column {
+  background-color: var(--items-column-background-color);
+  border-right: 1px solid var(--items-column-border-right-color);
+  user-select: none;
+}
+
+#items-title-bar-container {
+  flex: none;
+  padding: 12px 14px 10px;
+}
+
+#items-title-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+#items-title-bar .title {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.filter-section {
+  position: relative;
+  margin-top: 10px;
+}
+
+.filter-section > .icon {
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  transform: translateY(-50%);
+  color: var(--sn-stylekit-neutral-color);
+  pointer-events: none;
+}
+
+#search-bar {
+  width: 100%;
+  height: 32px;
+  padding: 0 10px 0 32px;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  background-color: var(--items-column-search-background-color);
+  color: var(--sn-stylekit-contrast-foreground-color);
+  font-size: 13px;
+}
+
+#search-bar::placeholder,
+.sn-input::placeholder {
+  color: var(--sn-stylekit-input-placeholder-color);
+}
+
+#search-bar:focus,
+.sn-input:focus,
+.sn-input.is-focused {
+  outline: 2px solid transparent;
+  border-color: var(--sn-stylekit-info-color);
+  box-shadow: 0 0 0 1px var(--sn-stylekit-info-color);
+}
+
+.list-meta {
+  margin-top: 8px;
+  font-size: 11.5px;
+  color: var(--sn-stylekit-neutral-color);
+}
+
+#notes-scrollable {
+  flex: 1;
+  min-height: 0;
+}
+
+#items-column .infinite-scroll {
+  background-color: var(--items-column-items-background-color);
+}
+
+#items-column .content-list-item {
+  display: flex;
+  gap: 10px;
+  padding: 11px 14px 12px 12px;
+  border-left: 2px solid transparent;
+  border-bottom: 1px solid var(--sn-stylekit-passive-color-4);
+  color: var(--sn-stylekit-foreground-color);
+  cursor: pointer;
+}
+
+#items-column .content-list-item:hover,
+#items-column .content-list-item.selected {
+  background-color: var(--item-cell-selected-background-color);
+}
+
+#items-column .content-list-item.selected {
+  border-left-color: var(--item-cell-selected-border-left-color);
+}
+
+.item-icon {
+  padding-top: 1px;
+  color: var(--tint);
+}
+
+.item-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.item-title {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 14px;
+  line-height: 1.3;
+}
+
+.font-semibold {
+  font-weight: 600;
+}
+
+.item-flags {
+  display: flex;
+  gap: 4px;
+  color: var(--sn-stylekit-neutral-color);
+}
+
+.item-flags .icon {
+  width: 13px;
+  height: 13px;
+}
+
+.item-preview {
+  display: -webkit-box;
+  margin: 4px 0 0;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--sn-stylekit-passive-color-0);
+}
+
+.item-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  font-size: 11.5px;
+  color: var(--sn-stylekit-neutral-color);
+}
+
+.item-tag {
+  padding: 1px 6px;
+  border-radius: 3px;
+  background-color: var(--sn-stylekit-passive-color-4-opacity-variant);
+  color: var(--sn-stylekit-passive-color-0);
+  font-size: 11px;
+}
+
+/* Editor */
+
+#editor-column {
+  background-color: var(--editor-pane-background-color);
+}
+
+#editor-title-bar {
+  flex: none;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px 20px 12px;
+  border-bottom: 1px solid var(--editor-title-bar-border-bottom-color);
+  background-color: var(--editor-header-bar-background-color);
+}
+
+.content-title-bar .title {
+  flex: 1;
+  min-width: 0;
+}
+
+#note-title-editor {
+  width: 100%;
+  padding: 0;
+  border: 0;
+  outline: none;
+  background-color: transparent;
+  color: var(--editor-title-input-color);
+  font-size: 19px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+}
+
+.note-meta {
+  margin-top: 3px;
+  font-size: 12px;
+  color: var(--sn-stylekit-neutral-color);
+}
+
+.title-actions {
+  display: flex;
+  gap: 6px;
+}
+
+#editor-content {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  background-color: var(--editor-pane-background-color);
+}
+
+#blocks-editor {
+  flex: 1;
+  min-width: 0;
+  background-color: var(--editor-pane-editor-background-color);
+  color: var(--editor-pane-editor-foreground-color);
+}
+
+#blocks-editor .ContentEditable__root {
+  max-width: 780px;
+  padding: 20px 24px 56px;
+  outline: none;
+  font-family: var(--sn-stylekit-editor-font-family);
+  font-size: var(--sn-stylekit-font-size-editor);
+  line-height: 1.6;
+}
+
+#blocks-editor p {
+  color: var(--sn-stylekit-editor-foreground-color);
+}
+
+.Lexical__paragraph {
+  margin: 0 0 0.75em;
+}
+
+.Lexical__h1,
+.Lexical__h2,
+.Lexical__h3 {
+  margin: 1.3em 0 0.45em;
+  line-height: 1.25;
+  font-weight: 700;
+  color: var(--sn-stylekit-editor-foreground-color);
+}
+
+.Lexical__h1 {
+  margin-top: 0;
+  font-size: 1.6em;
+}
+
+.Lexical__h2 {
+  font-size: 1.3em;
+}
+
+.Lexical__h3 {
+  font-size: 1.1em;
+}
+
+.Lexical__textBold {
+  font-weight: 700;
+}
+
+.Lexical__textItalic {
+  font-style: italic;
+}
+
+.Lexical__link {
+  color: var(--link-element-color);
+  text-decoration: none;
+}
+
+.Lexical__link:hover {
+  text-decoration: underline;
+}
+
+.Lexical__textCode {
+  padding: 0.12em 0.38em;
+  border-radius: 3px;
+  background-color: var(--sn-stylekit-secondary-background-color);
+  color: var(--sn-stylekit-info-color);
+  font-family: var(--sn-stylekit-monospace-font);
+  font-size: 0.86em;
+}
+
+.Lexical__hashtag {
+  background-color: color-mix(in srgb, var(--sn-stylekit-info-color) 12%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--sn-stylekit-info-color) 35%, transparent);
+}
+
+.Lexical__quote {
+  margin: 0.9em 0 1em;
+  padding: 0.1em 0 0.1em 14px;
+  border-left: 3px solid var(--sn-stylekit-passive-color-2);
+  color: var(--sn-stylekit-passive-color-1);
+}
+
+.Lexical__quote cite {
+  display: block;
+  margin-top: 0.3em;
+  font-size: 0.88em;
+  font-style: normal;
+}
+
+.Lexical__ul,
+.Lexical__ol1 {
+  margin: 0 0 0.9em;
+  padding-left: 1.5em;
+}
+
+.Lexical__listItem {
+  margin: 0.2em 0;
+}
+
+.Lexical__checkList {
+  padding-left: 0;
+}
+
+.Lexical__listItemChecked,
+.Lexical__listItemUnchecked {
+  position: relative;
+  padding-left: 28px;
+  list-style: none;
+}
+
+.Lexical__listItemChecked::before,
+.Lexical__listItemUnchecked::before,
+.Lexical__listItemChecked::after {
+  content: "";
+  position: absolute;
+  top: 0.18em;
+  left: 0;
+  width: 18px;
+  height: 18px;
+}
+
+.Lexical__listItemChecked::before,
+.Lexical__listItemUnchecked::before {
+  border: 1px solid var(--sn-stylekit-passive-color-2);
+  border-radius: 3px;
+  background-color: var(--sn-stylekit-background-color);
+}
+
+.Lexical__listItemChecked::before {
+  border-color: var(--sn-stylekit-info-color);
+  background-color: var(--sn-stylekit-info-color);
+}
+
+.Lexical__listItemChecked::after {
+  background: no-repeat center / 14px url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3.5 8.5l3 3 6-7' fill='none' stroke='white' stroke-width='2'/%3E%3C/svg%3E");
+}
+
+.Lexical__listItemChecked {
+  color: var(--sn-stylekit-passive-color-1);
+  text-decoration: line-through;
+}
+
+.Lexical__code {
+  display: block;
+  margin: 0.6em 0 1.1em;
+  padding: 14px 16px;
+  overflow-x: auto;
+  border: 1px solid var(--sn-stylekit-contrast-border-color);
+  border-radius: var(--radius);
+  background-color: var(--sn-stylekit-contrast-background-color);
+  font-family: var(--sn-stylekit-monospace-font);
+  font-size: 0.84em;
+  line-height: 1.6;
+  white-space: pre;
+  tab-size: 2;
+}
+
+.Lexical__tokenComment { color: var(--sn-stylekit-passive-color-1); }
+.Lexical__tokenPunctuation { color: var(--sn-stylekit-passive-color-1); }
+.Lexical__tokenProperty { color: var(--sn-stylekit-accessory-tint-color-2); }
+.Lexical__tokenSelector { color: var(--sn-stylekit-accessory-tint-color-5); }
+.Lexical__tokenOperator { color: var(--sn-stylekit-accessory-tint-color-6); }
+.Lexical__tokenAttr { color: var(--sn-stylekit-accessory-tint-color-1); }
+.Lexical__tokenVariable { color: var(--sn-stylekit-accessory-tint-color-3); }
+.Lexical__tokenFunction { color: var(--sn-stylekit-accessory-tint-color-4); }
+
+.Lexical__table {
+  width: 100%;
+  max-width: 560px;
+  margin: 0.6em 0 1.2em;
+  border-collapse: collapse;
+  table-layout: fixed;
+  color: var(--sn-stylekit-contrast-foreground-color);
+  font-size: 0.9em;
+}
+
+.Lexical__tableCell {
+  padding: 6px 10px;
+  border: 1px solid var(--sn-stylekit-border-color);
+  text-align: start;
+  vertical-align: top;
+}
+
+.Lexical__tableCellHeader {
+  background-color: var(--sn-stylekit-contrast-background-color);
+  font-weight: 600;
+}
+
+#blocks-editor hr {
+  margin: 1.4em 0;
+  padding: 2px 0;
+  border: 0;
+}
+
+#blocks-editor hr::after {
+  content: "";
+  display: block;
+  height: 2px;
+  background-color: var(--sn-stylekit-secondary-background-color);
+}
+
+/* ---- Sections below the app --------------------------------------------- */
+
+.site-section {
+  position: relative;
+  z-index: 1;
+  padding: 44px 24px;
+  border-top: 1px solid var(--sn-stylekit-border-color);
+  background-color: var(--sn-stylekit-background-color);
+}
+
+.site-section.alt {
+  background-color: var(--sn-stylekit-secondary-background-color);
+}
+
+.inner {
+  max-width: 1120px;
+  margin: 0 auto;
+}
+
+.site-section h2 {
+  margin: 0 0 8px;
+  font-size: 21px;
+  color: var(--sn-stylekit-foreground-color);
+}
+
+.lede {
+  max-width: 72ch;
+  margin: 0 0 26px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 290px), 1fr));
+}
+
+.kit-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+}
+
+.card {
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid var(--sn-stylekit-border-color);
+  border-radius: 6px;
+  background-color: var(--sn-stylekit-secondary-background-color);
+}
+
+.site-section.alt .card {
+  background-color: var(--sn-stylekit-background-color);
+}
+
+.card.wide {
+  grid-column: 1 / -1;
+}
+
+.card-title {
+  margin: 0 0 14px;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--sn-stylekit-neutral-color);
+}
+
+.stack > * + * {
+  margin-top: 12px;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.sn-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 32px;
+  padding: 0 14px;
+  border: 1px solid var(--sn-stylekit-border-color);
+  border-radius: var(--radius);
+  background-color: var(--normal-button-background-color);
+  color: var(--sn-stylekit-foreground-color);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.sn-button:hover {
+  background-color: var(--sn-stylekit-contrast-background-color);
+}
+
+.sn-button.primary {
+  border-color: var(--sn-stylekit-info-color);
+  background-color: var(--sn-stylekit-info-color);
+  color: var(--sn-stylekit-info-contrast-color);
+}
+
+.sn-button.primary:hover {
+  border-color: var(--sn-stylekit-info-color-darkened);
+  background-color: var(--sn-stylekit-info-color-darkened);
+}
+
+.sn-button.danger {
+  border-color: var(--sn-stylekit-danger-color);
+  background-color: var(--sn-stylekit-danger-color);
+  color: var(--sn-stylekit-danger-contrast-color);
+}
+
+.sn-button.small {
+  min-height: 28px;
+  padding: 0 10px;
+  font-size: 12px;
+}
+
+.sn-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.field label {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--sn-stylekit-passive-color-0);
+}
+
+.sn-input {
+  width: 100%;
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--sn-stylekit-input-border-color);
+  border-radius: var(--radius);
+  background-color: var(--sn-stylekit-background-color);
+  color: var(--sn-stylekit-contrast-foreground-color);
+  font-size: 13px;
+}
+
+.site-section.alt .card .sn-input {
+  background-color: var(--sn-stylekit-contrast-background-color);
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.check input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+}
+
+.callout {
+  --tone: var(--sn-stylekit-info-color);
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--tone) 55%, transparent);
+  border-radius: var(--radius);
+  background-color: color-mix(in srgb, var(--tone) 9%, var(--sn-stylekit-background-color));
+  color: var(--sn-stylekit-foreground-color);
+  font-size: 13px;
+}
+
+.callout .icon {
+  margin-top: 1px;
+  color: var(--tone);
+}
+
+.callout strong {
+  display: block;
+  margin-bottom: 1px;
+}
+
+.callout.success { --tone: var(--sn-stylekit-success-color); }
+.callout.warning { --tone: var(--sn-stylekit-warning-color); }
+
+.callout.danger {
+  --tone: var(--sn-stylekit-danger-color);
+  background-color: var(--sn-stylekit-danger-light-color);
+}
+
+.popover {
+  max-width: 290px;
+  padding: 6px 0;
+  border: 1px solid var(--popover-border-color);
+  border-radius: 6px;
+  background-color: var(--popover-background-color);
+  box-shadow: 0 10px 28px -10px var(--sn-stylekit-shadow-color);
+  -webkit-backdrop-filter: var(--popover-backdrop-filter, none);
+  backdrop-filter: var(--popover-backdrop-filter, none);
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 7px 14px;
+  border: 0;
+  background-color: transparent;
+  color: var(--sn-stylekit-contrast-foreground-color);
+  font-size: 13px;
+  text-align: left;
+}
+
+.menu-item:hover {
+  background-color: var(--sn-stylekit-contrast-background-color);
+}
+
+.menu-item .icon {
+  color: var(--sn-stylekit-neutral-color);
+}
+
+.menu-item .switch {
+  margin-left: auto;
+}
+
+.menu-item.danger,
+.menu-item.danger .icon {
+  color: var(--sn-stylekit-danger-color);
+}
+
+.menu-separator {
+  height: 1px;
+  margin: 6px 0;
+  background-color: var(--separator-color);
+}
+
+.menu-heading {
+  padding: 4px 14px 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--sn-stylekit-neutral-color);
+}
+
+.frame-note {
+  margin: -6px 0 14px;
+  font-size: 13px;
+}
+
+#editor-frame {
+  display: block;
+  width: 100%;
+  height: 300px;
+  border: 1px solid var(--sn-stylekit-border-color);
+  border-radius: var(--radius);
+  background-color: transparent;
+}
+
+/* Install */
+
+.steps {
+  margin: 0 0 16px;
+  padding: 0;
+  list-style: none;
+  counter-reset: step;
+}
+
+.steps li {
+  position: relative;
+  min-height: 26px;
+  margin: 0 0 14px;
+  padding-left: 38px;
+  font-size: 13.5px;
+  line-height: 1.55;
+  counter-increment: step;
+}
+
+.steps li::before {
+  content: counter(step);
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--sn-stylekit-info-color);
+  border-radius: 50%;
+  color: var(--sn-stylekit-info-color);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.path {
+  font-weight: 600;
+  color: var(--sn-stylekit-foreground-color);
+  white-space: nowrap;
+}
+
+.fine {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--sn-stylekit-neutral-color);
+}
+
+@media (min-width: 900px) {
+  .install-grid {
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  }
+}
+
+.url-list {
+  margin: 0 0 18px;
+  padding: 0;
+  list-style: none;
+}
+
+.url-row {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-top: 1px solid var(--separator-color);
+}
+
+.url-row:last-child {
+  border-bottom: 1px solid var(--separator-color);
+}
+
+.url-name {
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.url-row code {
+  padding: 6px 8px;
+  overflow-wrap: anywhere;
+  border: 1px solid var(--sn-stylekit-border-color);
+  border-radius: var(--radius);
+  background-color: var(--sn-stylekit-contrast-background-color);
+  color: var(--sn-stylekit-foreground-color);
+  font-size: 12px;
+  user-select: all;
+}
+
+.site-footer {
+  position: relative;
+  z-index: 1;
+  padding: 18px 24px 28px;
+  border-top: 1px solid var(--sn-stylekit-border-color);
+  background-color: var(--sn-stylekit-background-color);
+  color: var(--sn-stylekit-neutral-color);
+  font-size: 12px;
+  text-align: center;
+}
+
+/* ---- Narrower screens --------------------------------------------------- */
+
+@media (max-width: 900px) {
+  .bar-label {
+    display: none;
+  }
+}
+
+/* Phones: one pane at a time, as in Standard Notes. */
+@media (max-width: 767.98px) {
+  .site-bar {
+    padding: 8px 12px;
+  }
+
+  .brand-tagline .wide {
+    display: none;
+  }
+
+  .bar-controls {
+    order: 3;
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .toggle {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .install-link {
+    margin-left: auto;
+  }
+
+  .app-panes {
+    display: block;
+    position: relative;
+  }
+
+  .app-pane {
+    position: absolute;
+    inset: 0;
+    display: none;
+    border-right: 0 !important;
+  }
+
+  .app-panes[data-pane="navigation"] > #navigation,
+  .app-panes[data-pane="items"] > #items-column,
+  .app-panes[data-pane="editor"] > #editor-column {
+    display: flex;
+  }
+
+  .phone-only {
+    display: inline-grid !important;
+  }
+
+  #editor-title-bar {
+    padding: 12px 14px 10px;
+  }
+
+  #blocks-editor .ContentEditable__root {
+    padding: 16px 16px 48px;
+  }
+
+  .site-section {
+    padding: 32px 16px;
+  }
+
+  .url-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .url-row code {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .switch,
+  .switch::before {
+    transition: none;
+  }
+}
+</style>
+<script>
+// Activates the themes the way Standard Notes does: one
+// <link rel="stylesheet" media="screen,print"> per active theme in <head>,
+// the main theme first and the layers after it.
+(() => {
+  const params = new URLSearchParams(location.search)
+  // Served from dev/ while developing and from the site root once published.
+  const base = new URL(/\/dev\/[^/]*$/.test(location.pathname) ? '../' : './', location.href)
+  const files = { cypherpunk: 'index.css', rain: 'rain/index.css', scanlines: 'scanlines/index.css' }
+  const order = Object.keys(files)
+  const asked = (params.get('layers') || '').split(',').map((key) => key.trim())
+  const state = {
+    theme: params.get('theme') !== 'none',
+    layers: new Set(['rain', 'scanlines'].filter((key) => asked.includes(key))),
+  }
+  const active = () => order.filter((key) => (key === 'cypherpunk' ? state.theme : state.layers.has(key)))
+  const urls = () => active().map((key) => new URL(files[key], base).href)
+  const loaded = new WeakMap()
+  const listeners = []
+
+  // Standard Notes parses this value for the browser and phone status bar
+  // colors, and its parser only accepts #rrggbb.
+  const syncThemeColor = () => {
+    const color = getComputedStyle(document.documentElement).getPropertyValue('--sn-stylekit-background-color').trim()
+    if (!/^#[0-9a-f]{6}$/i.test(color)) {
+      console.error(`--sn-stylekit-background-color must be a #rrggbb color, got "${color}"`)
+      return
+    }
+    document.querySelector('meta[name="theme-color"]').setAttribute('content', color)
+  }
+
+  const apply = () => {
+    const keys = active()
+    const linkFor = (key) => document.head.querySelector(`link[data-theme="${key}"]`)
+    for (const link of document.head.querySelectorAll('link[data-theme]')) {
+      if (!keys.includes(link.dataset.theme)) link.remove()
+    }
+    const loads = keys.map((key) => {
+      const existing = linkFor(key)
+      if (existing) return loaded.get(existing)
+      const link = document.createElement('link')
+      link.rel = 'stylesheet'
+      link.media = 'screen,print'
+      link.href = new URL(files[key], base).href
+      link.dataset.theme = key
+      // On first load, hold the first paint until the theme arrives.
+      if (!document.body) link.setAttribute('blocking', 'render')
+      loaded.set(link, new Promise((resolve) => (link.onload = link.onerror = resolve)))
+      const next = order.slice(order.indexOf(key) + 1).map(linkFor).find(Boolean)
+      document.head.insertBefore(link, next || null)
+      return loaded.get(link)
+    })
+    Promise.all(loads).then(() => {
+      if (active().join() !== keys.join()) return
+      document.documentElement.dataset.themes = keys.join(' ') || 'none'
+      syncThemeColor()
+      for (const listener of listeners) listener()
+    })
+  }
+
+  window.cypherpunkPreview = { state, base, urls, apply, onApplied: (listener) => listeners.push(listener) }
+  apply()
+})()
+</script>
+</head>
+<body class="linux-web">
+<script>
+  // The app tags <body> with its platform, e.g. "mac-web" or "android-web".
+  document.body.className = (/android/i.test(navigator.userAgent) ? 'android' : /iphone|ipad/i.test(navigator.userAgent) ? 'ios' : /mac/i.test(navigator.platform) ? 'mac' : /win/i.test(navigator.platform) ? 'windows' : 'linux') + '-web'
+</script>
+
+<svg width="0" height="0" style="position: absolute" aria-hidden="true">
+  <symbol id="i-mark" viewBox="0 0 26 26"><rect x="1" y="1" width="24" height="24" rx="5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M6.5 8.5l4.5 4.5-4.5 4.5" fill="none" stroke="currentColor" stroke-width="2"/><rect x="13" y="16" width="7" height="2.4" fill="currentColor"/></symbol>
+  <symbol id="i-notes" viewBox="0 0 24 24"><path d="M6 3h8.5L19 7.5V21H6z"/><path d="M14 3v5h5M9 12.5h7M9 16.5h5"/></symbol>
+  <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 3H6v18h13V8z"/><path d="M14 3v5h5"/><circle cx="10.5" cy="13" r="1.6"/><path d="M7 19l4-3.5 3 2.5 2-1.5 3 2.5"/></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 3.6l2.6 5.3 5.8.8-4.2 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.2-4.1 5.8-.8z"/></symbol>
+  <symbol id="i-archive" viewBox="0 0 24 24"><path d="M3.5 5h17v4h-17zM5 9v10.5h14V9M10 13h4"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9.5 7V4h5v3M6 7l1 13.5h10L18 7M10 11v6M14 11v6"/></symbol>
+  <symbol id="i-hash" viewBox="0 0 24 24"><path d="M9.5 4L7.5 20M16.5 4l-2 16M4.5 9h15.5M3.5 15H19"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L20 20"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-more" viewBox="0 0 24 24"><circle cx="5.5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="18.5" cy="12" r="1.3"/></symbol>
+  <symbol id="i-pin" viewBox="0 0 24 24"><path d="M9 3.5h6l-1 5.5 3.5 3.5h-11L10 9zM12 12.5V21"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9.5" rx="1.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></symbol>
+  <symbol id="i-forward" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4.5 20.5c1.4-3.6 4.3-5.5 7.5-5.5s6.1 1.9 7.5 5.5"/></symbol>
+  <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 7h9M19 7h1M4 17h3M13 17h7"/><circle cx="16" cy="7" r="2.5"/><circle cx="10" cy="17" r="2.5"/></symbol>
+  <symbol id="i-palette" viewBox="0 0 24 24"><path d="M12 3.5a8.5 8.5 0 1 0 0 17c1.3 0 1.9-.9 1.9-1.8 0-1.2-1-1.5-1-2.5s.9-1.6 2-1.6H17a3.5 3.5 0 0 0 3.5-3.5c0-4.3-3.8-7.6-8.5-7.6z"/><circle cx="7.8" cy="11" r="1"/><circle cx="10.5" cy="7.6" r="1"/><circle cx="14.8" cy="7.8" r="1"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8.5" y="8.5" width="11.5" height="11.5" rx="1.5"/><path d="M15.5 8.5V4H4v11.5h4.5"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v11M7 10.5l5 5 5-5M5 20h14"/></symbol>
+  <symbol id="i-ok" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M8.2 12.4l2.6 2.6 5-5.5"/></symbol>
+  <symbol id="i-warn" viewBox="0 0 24 24"><path d="M12 4l9 15.5H3z"/><path d="M12 10v4.2M12 16.8v.2"/></symbol>
+  <symbol id="i-error" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M9 9l6 6M15 9l-6 6"/></symbol>
+  <symbol id="i-key" viewBox="0 0 24 24"><circle cx="8" cy="15" r="4"/><path d="M11 12l8-8M16 7l2.5 2.5M14 9l2 2"/></symbol>
+  <symbol id="i-code" viewBox="0 0 24 24"><path d="M8.5 7.5L4 12l4.5 4.5M15.5 7.5L20 12l-4.5 4.5M13.5 5l-3 14"/></symbol>
+  <symbol id="i-list" viewBox="0 0 24 24"><path d="M10 7h10M10 12h10M10 17h10"/><path d="M4 7l1.3 1.3L7.5 6M4 12l1.3 1.3L7.5 11"/><circle cx="5.5" cy="17" r="1"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.8"/></symbol>
+</svg>
+
+<div class="screen">
+  <header class="site-bar">
+    <div class="brand">
+      <svg class="brand-mark" aria-hidden="true"><use href="#i-mark"/></svg>
+      <div class="brand-text">
+        <h1 class="brand-name">Cypherpunk</h1>
+        <span class="brand-tagline">Theme preview on a mock<span class="wide"> Standard Notes</span> layout</span>
+      </div>
+    </div>
+    <div class="bar-controls" role="group" aria-label="Themes">
+      <span class="bar-label">Try it:</span>
+      <button type="button" class="toggle" data-key="cypherpunk" aria-pressed="true"><span class="switch" aria-hidden="true"></span>Theme</button>
+      <button type="button" class="toggle" data-key="rain" aria-pressed="false"><span class="switch" aria-hidden="true"></span>Rain</button>
+      <button type="button" class="toggle" data-key="scanlines" aria-pressed="false"><span class="switch" aria-hidden="true"></span>Scanlines</button>
+    </div>
+    <a class="sn-button primary small install-link" href="#install"><svg class="icon" aria-hidden="true"><use href="#i-download"/></svg>Install</a>
+  </header>
+
+  <div id="app">
+    <div class="main-ui-view sn-component">
+      <div class="app-panes" data-pane="items">
+
+        <nav id="navigation" class="app-pane" aria-label="Views and tags">
+          <div id="navigation-content" class="scroll">
+            <div class="sticky">
+              <div class="workspace">Notes<small>Local workspace</small></div>
+              <button type="button" class="icon-button plain phone-only" data-show-pane="items" aria-label="Back to notes"><svg class="icon" aria-hidden="true"><use href="#i-forward"/></svg></button>
+            </div>
+            <div class="section-title-bar">Views</div>
+            <div class="tag selected" role="button" tabindex="0" aria-current="true"><div class="tag-info"><span class="tag-icon"><svg class="icon" aria-hidden="true"><use href="#i-notes"/></svg></span><span class="title">Notes</span><span class="count">12</span></div></div>
+            <div class="tag" role="button" tabindex="0"><div class="tag-info"><span class="tag-icon"><svg class="icon" aria-hidden="true"><use href="#i-file"/></svg></span><span class="title">Files</span><span class="count">3</span></div></div>
+            <div class="tag" role="button" tabindex="0"><div class="tag-info"><span class="tag-icon"><svg class="icon" aria-hidden="true"><use href="#i-star"/></svg></span><span class="title">Starred</span><span class="count">2</span></div></div>
+            <div class="tag" role="button" tabindex="0"><div class="tag-info"><span class="tag-icon"><svg class="icon" aria-hidden="true"><use href="#i-archive"/></svg></span><span class="title">Archived</span><span class="count"></span></div></div>
+            <div class="tag" role="button" tabindex="0"><div class="tag-info"><span class="tag-icon"><svg class="icon" aria-hidden="true"><use href="#i-trash"/></svg></span><span class="title">Trash</span><span class="count">1</span></div></div>
+            <div class="section-title-bar">Tags</div>
+            <div class="tag" role="button" tabindex="0"><div class="tag-info"><span class="tag-icon"><svg class="icon" aria-hidden="true"><use href="#i-hash"/></svg></span><span class="title">crypto</span><span class="count">4</span></div></div>
+            <div class="tag" role="button" tabindex="0"><div class="tag-info"><span class="tag-icon"><svg class="icon" aria-hidden="true"><use href="#i-hash"/></svg></span><span class="title">ops</span><span class="count">3</span></div></div>
+            <div class="tag" role="button" tabindex="0"><div class="tag-info"><span class="tag-icon"><svg class="icon" aria-hidden="true"><use href="#i-hash"/></svg></span><span class="title">keys</span><span class="count">2</span></div></div>
+            <div class="tag" role="button" tabindex="0"><div class="tag-info"><span class="tag-icon"><svg class="icon" aria-hidden="true"><use href="#i-hash"/></svg></span><span class="title">reading</span><span class="count">2</span></div></div>
+          </div>
+          <div class="nav-footer">
+            <button type="button" class="icon-button plain" aria-label="Account"><svg class="icon" aria-hidden="true"><use href="#i-user"/></svg></button>
+            <button type="button" class="icon-button plain" aria-label="Preferences"><svg class="icon" aria-hidden="true"><use href="#i-sliders"/></svg></button>
+            <button type="button" class="icon-button plain" aria-label="Quick settings"><svg class="icon" aria-hidden="true"><use href="#i-palette"/></svg></button>
+            <span class="sync-status"><span class="sync-dot" aria-hidden="true"></span>Saved</span>
+          </div>
+        </nav>
+
+        <section id="items-column" class="app-pane" aria-label="Notes">
+          <div id="items-title-bar-container">
+            <div id="items-title-bar">
+              <button type="button" class="icon-button plain phone-only" data-show-pane="navigation" aria-label="Views and tags"><svg class="icon" aria-hidden="true"><use href="#i-menu"/></svg></button>
+              <h2 class="title">Notes</h2>
+              <button type="button" class="icon-button primary" id="new-note" aria-label="New note"><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg></button>
+            </div>
+            <div class="filter-section" role="search">
+              <svg class="icon" aria-hidden="true"><use href="#i-search"/></svg>
+              <input id="search-bar" class="filter-bar" type="text" placeholder="Search notes" autocomplete="off" aria-label="Search notes">
+            </div>
+            <div class="list-meta">6 notes &middot; by date modified</div>
+          </div>
+          <div id="notes-scrollable" class="infinite-scroll scroll" role="listbox" aria-label="Notes">
+            <div class="content-list-item selected" role="option" tabindex="0" aria-selected="true" style="--tint: var(--sn-stylekit-accessory-tint-color-1)">
+              <svg class="icon item-icon" aria-hidden="true"><use href="#i-notes"/></svg>
+              <div class="item-body">
+                <div class="item-title font-semibold"><span class="item-title-text">Field manual</span><span class="item-flags"><svg class="icon" aria-label="Pinned"><use href="#i-pin"/></svg></span></div>
+                <p class="item-preview">Plain notes for a green screen. Body text stays soft mint; bright green is kept for links, focus and the things you act on.</p>
+                <div class="item-meta">Today, 09:41 <span class="item-tag">crypto</span><span class="item-tag">ops</span></div>
+              </div>
+            </div>
+            <div class="content-list-item" role="option" tabindex="0" aria-selected="false" style="--tint: var(--sn-stylekit-accessory-tint-color-6)" data-body="Keyfold: 2 seed phrases, 1 SSH key.&#10;Open this note in the Keyfold editor to see the vault.">
+              <svg class="icon item-icon" aria-hidden="true"><use href="#i-key"/></svg>
+              <div class="item-body">
+                <div class="item-title font-semibold"><span class="item-title-text">Wallet backups</span><span class="item-flags"><svg class="icon" aria-label="Locked"><use href="#i-lock"/></svg></span></div>
+                <p class="item-preview">Keyfold: 2 seed phrases, 1 SSH key</p>
+                <div class="item-meta">Yesterday <span class="item-tag">keys</span></div>
+              </div>
+            </div>
+            <div class="content-list-item" role="option" tabindex="0" aria-selected="false" style="--tint: var(--sn-stylekit-accessory-tint-color-5)" data-body="Two people, one offline laptop, no phones in the room.&#10;Generate the key, print the backup sheet, verify it, then wipe the laptop.&#10;Store the two halves in different buildings.">
+              <svg class="icon item-icon" aria-hidden="true"><use href="#i-list"/></svg>
+              <div class="item-body">
+                <div class="item-title font-semibold"><span class="item-title-text">Key ceremony checklist</span><span class="item-flags"><svg class="icon" aria-label="Starred"><use href="#i-star"/></svg></span></div>
+                <p class="item-preview">Two people, one offline laptop, no phones in the room. Generate the key, print the backup sheet, verify it, then wipe the laptop.</p>
+                <div class="item-meta">Mon <span class="item-tag">keys</span></div>
+              </div>
+            </div>
+            <div class="content-list-item" role="option" tabindex="0" aria-selected="false" style="--tint: var(--sn-stylekit-accessory-tint-color-4)" data-body="listen 127.0.0.1:9001&#10;upstream relay.internal:443&#10;log_level warn">
+              <svg class="icon item-icon" aria-hidden="true"><use href="#i-code"/></svg>
+              <div class="item-body">
+                <div class="item-title font-semibold"><span class="item-title-text">relay.conf</span></div>
+                <p class="item-preview">listen 127.0.0.1:9001 &middot; upstream relay.internal:443 &middot; log_level warn</p>
+                <div class="item-meta">Sep 28 <span class="item-tag">ops</span></div>
+              </div>
+            </div>
+            <div class="content-list-item" role="option" tabindex="0" aria-selected="false" style="--tint: var(--sn-stylekit-accessory-tint-color-1)" data-body="A Cypherpunk's Manifesto, Eric Hughes (1993).&#10;Applied Cryptography, Bruce Schneier.&#10;The Code Book, Simon Singh.">
+              <svg class="icon item-icon" aria-hidden="true"><use href="#i-notes"/></svg>
+              <div class="item-body">
+                <div class="item-title font-semibold"><span class="item-title-text">Reading list</span></div>
+                <p class="item-preview">A Cypherpunk's Manifesto, Eric Hughes (1993). Applied Cryptography, Bruce Schneier. The Code Book, Simon Singh.</p>
+                <div class="item-meta">Sep 21 <span class="item-tag">reading</span></div>
+              </div>
+            </div>
+            <div class="content-list-item" role="option" tabindex="0" aria-selected="false" style="--tint: var(--sn-stylekit-accessory-tint-color-3)" data-body="Coffee, solder, two USB drives, label tape, a fireproof pouch.">
+              <svg class="icon item-icon" aria-hidden="true"><use href="#i-notes"/></svg>
+              <div class="item-body">
+                <div class="item-title font-semibold"><span class="item-title-text">Supplies</span></div>
+                <p class="item-preview">Coffee, solder, two USB drives, label tape, a fireproof pouch.</p>
+                <div class="item-meta">Sep 14</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="editor-column" class="app-pane" aria-label="Editor">
+          <div id="editor-title-bar" class="content-title-bar">
+            <button type="button" class="icon-button plain phone-only" data-show-pane="items" aria-label="Back to notes"><svg class="icon" aria-hidden="true"><use href="#i-back"/></svg></button>
+            <div class="title">
+              <input id="note-title-editor" class="input" type="text" value="Field manual" aria-label="Title" spellcheck="false">
+              <div class="note-meta">Super note &middot; edited today, 09:41</div>
+            </div>
+            <div class="title-actions">
+              <button type="button" class="icon-button" aria-label="Pin"><svg class="icon" aria-hidden="true"><use href="#i-pin"/></svg></button>
+              <button type="button" class="icon-button" aria-label="Note options"><svg class="icon" aria-hidden="true"><use href="#i-more"/></svg></button>
+            </div>
+          </div>
+          <div id="editor-content">
+            <div id="blocks-editor" class="scroll">
+              <div class="ContentEditable__root" contenteditable="true" spellcheck="false" role="textbox" aria-multiline="true" aria-label="Note text">
+                <h1 class="Lexical__h1">Read me first</h1>
+                <p class="Lexical__paragraph">Plain notes for a green screen. Body text stays soft mint for long reading; <strong class="Lexical__textBold">bright green</strong> is kept for links, focus and the things you act on. Errors still look like errors.</p>
+                <h2 class="Lexical__h2">Principles</h2>
+                <ul class="Lexical__ul">
+                  <li class="Lexical__listItem">Keys stay offline. Copies are <em class="Lexical__textItalic">verified</em>, not assumed.</li>
+                  <li class="Lexical__listItem">Everything that leaves this device is encrypted first.</li>
+                  <li class="Lexical__listItem">Tag notes like <span class="Lexical__hashtag">#offline</span> so they are easy to find in an emergency.</li>
+                </ul>
+                <blockquote class="Lexical__quote">Privacy is necessary for an open society in the electronic age.<cite>Eric Hughes, A Cypherpunk's Manifesto (1993)</cite></blockquote>
+                <h3 class="Lexical__h3">Before a release</h3>
+                <ul class="Lexical__ul Lexical__checkList">
+                  <li class="Lexical__listItem Lexical__listItemChecked" role="checkbox" aria-checked="true">Verify the signature on the download</li>
+                  <li class="Lexical__listItem Lexical__listItemChecked" role="checkbox" aria-checked="true">Rotate the backup passphrase</li>
+                  <li class="Lexical__listItem Lexical__listItemUnchecked" role="checkbox" aria-checked="false">Restore from the offline copy</li>
+                  <li class="Lexical__listItem Lexical__listItemUnchecked" role="checkbox" aria-checked="false">Shred the old drive</li>
+                </ul>
+                <p class="Lexical__paragraph">Run <code class="Lexical__textCode">sha256sum --check</code> before opening anything you downloaded, and see <a class="Lexical__link" href="#install">the install notes</a> for this theme.</p>
+<pre class="Lexical__code"><span class="Lexical__tokenComment"># check a download before trusting it</span>
+<span class="Lexical__tokenFunction">sha256sum</span> <span class="Lexical__tokenAttr">--check</span> SHA256SUMS
+<span class="Lexical__tokenFunction">gpg</span> <span class="Lexical__tokenAttr">--verify</span> release.tar.gz.asc release.tar.gz
+<span class="Lexical__tokenVariable">KEY_ID</span><span class="Lexical__tokenOperator">=</span><span class="Lexical__tokenSelector">"ed25519/4F2A"</span> <span class="Lexical__tokenPunctuation">;</span> <span class="Lexical__tokenFunction">echo</span> <span class="Lexical__tokenProperty">$KEY_ID</span></pre>
+                <h3 class="Lexical__h3">Keys</h3>
+                <table class="Lexical__table">
+                  <thead><tr><th class="Lexical__tableCell Lexical__tableCellHeader">Key</th><th class="Lexical__tableCell Lexical__tableCellHeader">Algorithm</th><th class="Lexical__tableCell Lexical__tableCellHeader">Expires</th></tr></thead>
+                  <tbody>
+                    <tr><td class="Lexical__tableCell">Signing</td><td class="Lexical__tableCell">Ed25519</td><td class="Lexical__tableCell">2027-03</td></tr>
+                    <tr><td class="Lexical__tableCell">Encryption</td><td class="Lexical__tableCell">X25519</td><td class="Lexical__tableCell">2027-03</td></tr>
+                    <tr><td class="Lexical__tableCell">Backup</td><td class="Lexical__tableCell">AES-256</td><td class="Lexical__tableCell">Never</td></tr>
+                  </tbody>
+                </table>
+                <hr>
+                <p class="Lexical__paragraph">Last reviewed by two people on paper.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<main>
+  <section id="kit" class="site-section" aria-labelledby="kit-title">
+    <div class="inner">
+      <h2 id="kit-title">Controls</h2>
+      <p class="lede">Buttons, fields, callouts and menus, drawn with the same variables Standard Notes uses. The editor at the bottom is a separate page in a frame, the way third-party editors run: it loads the same stylesheets, and the layers stay out of it.</p>
+      <div class="grid kit-grid">
+        <div class="card stack">
+          <h3 class="card-title">Buttons</h3>
+          <div class="row">
+            <button type="button" class="sn-button primary">Save</button>
+            <button type="button" class="sn-button">Cancel</button>
+            <button type="button" class="sn-button danger">Delete note</button>
+          </div>
+          <div class="row">
+            <button type="button" class="sn-button small"><svg class="icon" aria-hidden="true"><use href="#i-copy"/></svg>Duplicate</button>
+            <button type="button" class="sn-button small" disabled>Disabled</button>
+          </div>
+        </div>
+        <div class="card stack">
+          <h3 class="card-title">Fields</h3>
+          <div class="field">
+            <label for="field-label">Label</label>
+            <input id="field-label" class="sn-input" type="text" placeholder="Untitled">
+          </div>
+          <div class="field">
+            <label for="field-focused">Focused</label>
+            <input id="field-focused" class="sn-input is-focused" type="text" value="relay.internal">
+          </div>
+          <label class="check"><input type="checkbox" checked> Sign out of other sessions</label>
+        </div>
+        <div class="card stack">
+          <h3 class="card-title">Callouts</h3>
+          <div class="callout success" role="status"><svg class="icon" aria-hidden="true"><use href="#i-ok"/></svg><div><strong>Synced</strong>All changes are saved and encrypted.</div></div>
+          <div class="callout warning" role="status"><svg class="icon" aria-hidden="true"><use href="#i-warn"/></svg><div><strong>Offline</strong>Changes will sync when you reconnect.</div></div>
+          <div class="callout danger" role="alert"><svg class="icon" aria-hidden="true"><use href="#i-error"/></svg><div><strong>Decryption failed</strong>One item could not be decrypted with this key.</div></div>
+        </div>
+        <div class="card">
+          <h3 class="card-title">Menu</h3>
+          <div class="popover" role="menu" aria-label="Note options">
+            <div class="menu-heading">Note options</div>
+            <button type="button" class="menu-item" role="menuitem"><svg class="icon" aria-hidden="true"><use href="#i-pin"/></svg>Pin to top</button>
+            <button type="button" class="menu-item" role="menuitem"><svg class="icon" aria-hidden="true"><use href="#i-star"/></svg>Star</button>
+            <button type="button" class="menu-item" role="menuitem"><svg class="icon" aria-hidden="true"><use href="#i-archive"/></svg>Archive</button>
+            <div class="menu-separator" role="separator"></div>
+            <button type="button" class="menu-item" role="menuitemcheckbox" aria-checked="true"><svg class="icon" aria-hidden="true"><use href="#i-eye"/></svg>Show preview<span class="switch" aria-hidden="true"></span></button>
+            <button type="button" class="menu-item" role="menuitemcheckbox" aria-checked="false"><svg class="icon" aria-hidden="true"><use href="#i-lock"/></svg>Prevent editing<span class="switch" aria-hidden="true"></span></button>
+            <div class="menu-separator" role="separator"></div>
+            <button type="button" class="menu-item danger" role="menuitem"><svg class="icon" aria-hidden="true"><use href="#i-trash"/></svg>Move to trash</button>
+          </div>
+        </div>
+        <div class="card wide">
+          <h3 class="card-title">Plugin editor</h3>
+          <p class="frame-note">A third-party editor in a sandboxed frame. It only knows the theme through the stylesheet links it is sent.</p>
+          <iframe id="editor-frame" title="Plugin editor" sandbox="allow-scripts allow-forms allow-popups allow-modals"></iframe>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="install" class="site-section alt" aria-labelledby="install-title">
+    <div class="inner">
+      <h2 id="install-title">Install</h2>
+      <p class="lede">Cypherpunk is the main theme. Rain and Scanlines are layers: switch them on over Cypherpunk, or over any other theme.</p>
+      <div class="grid install-grid">
+        <div class="card">
+          <h3 class="card-title">Desktop and phone apps</h3>
+          <ol class="steps">
+            <li>Open <span class="path">Preferences &rsaquo; Plugins</span> and find <span class="path">Install Custom Plugin</span>.</li>
+            <li>Paste a link, choose <span class="path">Install</span>, then <span class="path">Install</span> again to confirm. Repeat for each layer you want.</li>
+          </ol>
+          <ul class="url-list">
+            <li class="url-row"><span class="url-name">Cypherpunk</span><code id="url-cypherpunk" data-path="ext.json">https://nickstruglia.github.io/standard-notes-cypherpunk/ext.json</code><button type="button" class="sn-button small" data-copy="url-cypherpunk"><svg class="icon" aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></li>
+            <li class="url-row"><span class="url-name">Rain</span><code id="url-rain" data-path="rain/ext.json">https://nickstruglia.github.io/standard-notes-cypherpunk/rain/ext.json</code><button type="button" class="sn-button small" data-copy="url-rain"><svg class="icon" aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></li>
+            <li class="url-row"><span class="url-name">Scanlines</span><code id="url-scanlines" data-path="scanlines/ext.json">https://nickstruglia.github.io/standard-notes-cypherpunk/scanlines/ext.json</code><button type="button" class="sn-button small" data-copy="url-scanlines"><svg class="icon" aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></li>
+          </ul>
+          <ol class="steps" start="3" style="counter-reset: step 2">
+            <li>Open the palette menu at the bottom of the sidebar and pick <span class="path">Cypherpunk</span>. The layers turn on and off in the same menu.</li>
+          </ol>
+          <p class="fine">Updates arrive by themselves: phones load the theme from this site, and the desktop app checks for a new version when it starts.</p>
+        </div>
+        <div class="card">
+          <h3 class="card-title">Web app</h3>
+          <p class="fine" style="margin-bottom: 14px">The web app can't install plugins from a link. If you're signed in, install on a desktop or phone and the themes sync to the web app. Otherwise, import them from a small backup file:</p>
+          <ol class="steps">
+            <li><a id="import-file" class="sn-button primary" href="cypherpunk-import.json" download="cypherpunk-import.json"><svg class="icon" aria-hidden="true"><use href="#i-download"/></svg>Download cypherpunk-import.json</a></li>
+            <li>Open <span class="path">Preferences &rsaquo; Backups &rsaquo; Import backup</span> and choose the file, then pick the themes from the palette menu.</li>
+          </ol>
+          <p class="fine">Used the file in the desktop app? Restart it once before choosing the theme.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  Cypherpunk for Standard Notes &middot; <a href="https://github.com/nickstruglia/standard-notes-cypherpunk">Source on GitHub</a> &middot; MIT License &middot; &copy; 2026 Nicholas Truglia &middot; An independent theme, not made by Standard Notes.
+</footer>
+
+<script>
+(() => {
+  const preview = window.cypherpunkPreview
+  const { state } = preview
+  const params = new URLSearchParams(location.search)
+  const phone = matchMedia('(max-width: 767.98px)')
+
+  // ---- Theme and layer toggles --------------------------------------------
+
+  const toggles = [...document.querySelectorAll('.toggle[data-key]')]
+  const frame = document.getElementById('editor-frame')
+  const isOn = (key) => (key === 'cypherpunk' ? state.theme : state.layers.has(key))
+
+  const writeUrl = () => {
+    const query = new URLSearchParams(location.search)
+    if (state.theme) query.delete('theme')
+    else query.set('theme', 'none')
+    const layers = ['rain', 'scanlines'].filter(isOn)
+    if (layers.length) query.set('layers', layers.join(','))
+    else query.delete('layers')
+    const search = [...query].map(([key, value]) => `${key}=${encodeURIComponent(value).replace(/%2C/g, ',')}`).join('&')
+    history.replaceState(null, '', (search ? `?${search}` : location.pathname) + location.hash)
+  }
+
+  for (const toggle of toggles) {
+    toggle.setAttribute('aria-pressed', String(isOn(toggle.dataset.key)))
+    toggle.addEventListener('click', () => {
+      const key = toggle.dataset.key
+      if (key === 'cypherpunk') state.theme = !state.theme
+      else if (state.layers.has(key)) state.layers.delete(key)
+      else state.layers.add(key)
+      toggle.setAttribute('aria-pressed', String(isOn(key)))
+      preview.apply()
+      writeUrl()
+      // Standard Notes sends theme changes to open editors as a message.
+      frame.contentWindow?.postMessage({ action: 'themes', data: { themes: preview.urls() } }, '*')
+    })
+  }
+
+  // ---- Editor frame: the theme URLs go in its query string -----------------
+
+  const frameQuery = new URLSearchParams()
+  for (const url of preview.urls()) frameQuery.append('theme', url)
+  frame.src = `editor.html?${frameQuery}`
+
+  // ---- Panes ---------------------------------------------------------------
+
+  // On phones Standard Notes shows one pane at a time and only mounts the
+  // editor while a note is open, so the mock does the same.
+  const panes = document.querySelector('.app-panes')
+  const editorColumn = document.getElementById('editor-column')
+  const title = editorColumn.querySelector('#note-title-editor')
+  const body = editorColumn.querySelector('#blocks-editor .ContentEditable__root')
+  const richNote = body.innerHTML
+  const editorSlot = document.createComment(' editor-column ')
+  let pane = ['navigation', 'items', 'editor'].includes(params.get('pane')) ? params.get('pane') : 'items'
+  const layout = () => {
+    panes.dataset.pane = pane
+    const mounted = !phone.matches || pane === 'editor'
+    if (mounted && !editorColumn.isConnected) editorSlot.replaceWith(editorColumn)
+    else if (!mounted && editorColumn.isConnected) editorColumn.replaceWith(editorSlot)
+  }
+  const show = (next) => {
+    pane = next
+    layout()
+  }
+  phone.addEventListener('change', layout)
+  layout()
+  for (const button of document.querySelectorAll('[data-show-pane]')) {
+    button.addEventListener('click', () => show(button.dataset.showPane))
+  }
+
+  const onActivate = (element, handler) => {
+    element.addEventListener('click', handler)
+    element.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter' && event.key !== ' ') return
+      event.preventDefault()
+      handler()
+    })
+  }
+
+  // ---- Views and tags ------------------------------------------------------
+
+  const tags = [...document.querySelectorAll('#navigation .tag')]
+  const listTitle = document.querySelector('#items-title-bar .title')
+  for (const tag of tags) {
+    onActivate(tag, () => {
+      for (const other of tags) {
+        other.classList.toggle('selected', other === tag)
+        if (other === tag) other.setAttribute('aria-current', 'true')
+        else other.removeAttribute('aria-current')
+      }
+      listTitle.textContent = tag.querySelector('.title').textContent
+      if (phone.matches) show('items')
+    })
+  }
+
+  // ---- Notes ---------------------------------------------------------------
+
+  const items = [...document.querySelectorAll('#notes-scrollable .content-list-item')]
+  for (const item of items) {
+    onActivate(item, () => {
+      for (const other of items) {
+        other.classList.toggle('selected', other === item)
+        other.setAttribute('aria-selected', String(other === item))
+      }
+      title.value = item.querySelector('.item-title-text').textContent
+      if (!item.dataset.body) body.innerHTML = richNote
+      else {
+        body.replaceChildren(
+          ...item.dataset.body.split('\n').map((line) => {
+            const paragraph = document.createElement('p')
+            paragraph.className = 'Lexical__paragraph'
+            paragraph.textContent = line
+            return paragraph
+          }),
+        )
+      }
+      if (phone.matches) show('editor')
+    })
+  }
+
+  // ---- Install links -------------------------------------------------------
+
+  // On GitHub Pages the links follow the site they are served from, so a fork
+  // shows its own URLs. Anywhere else they show the published ones.
+  document.getElementById('import-file').href = new URL('cypherpunk-import.json', preview.base).href
+  if (location.hostname.endsWith('.github.io')) {
+    for (const code of document.querySelectorAll('code[data-path]')) {
+      code.textContent = new URL(code.dataset.path, preview.base).href
+    }
+  }
+
+  const selectText = (element) => {
+    const range = document.createRange()
+    range.selectNodeContents(element)
+    getSelection().removeAllRanges()
+    getSelection().addRange(range)
+  }
+
+  for (const button of document.querySelectorAll('[data-copy]')) {
+    const label = button.querySelector('span')
+    let timer
+    button.addEventListener('click', async () => {
+      const code = document.getElementById(button.dataset.copy)
+      let copied = false
+      try {
+        await navigator.clipboard.writeText(code.textContent.trim())
+        copied = true
+      } catch {
+        // No clipboard access (an older browser or a denied permission):
+        // select the link so it can be copied by hand.
+        selectText(code)
+        try {
+          copied = document.execCommand('copy')
+        } catch {
+          copied = false
+        }
+      }
+      label.textContent = copied ? 'Copied' : 'Selected'
+      clearTimeout(timer)
+      timer = setTimeout(() => (label.textContent = 'Copy'), 1600)
+    })
+  }
+})()
+</script>
+</body>
+</html>

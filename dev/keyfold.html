@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Keyfold with Cypherpunk</title>
+<link rel="icon" href="data:,">
+<!--
+  Frames the Keyfold editor (built by `npm run keyfold`, served at /keyfold/)
+  the way Standard Notes frames third-party editors, and speaks enough of the
+  plugin protocol for it to load a note and the active themes. Based on
+  Keyfold's own dev/host.js (MIT, same author).
+
+    ?theme=none              no Cypherpunk
+    ?layers=rain,scanlines   layers to send along, as the app does
+-->
+<style>
+:root {
+  --bg: var(--sn-stylekit-background-color, #ffffff);
+  --fg: var(--sn-stylekit-foreground-color, #1c1d21);
+  --panel: var(--sn-stylekit-secondary-background-color, #eceef1);
+  --border: var(--sn-stylekit-border-color, #dde0e5);
+  --muted: var(--sn-stylekit-neutral-color, #6d7179);
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg);
+  color: var(--fg);
+  font: 13px/1.45 var(--sn-stylekit-sans-serif-font, system-ui, sans-serif);
+}
+
+header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--border);
+  background-color: var(--panel);
+}
+
+header strong {
+  font-size: 14px;
+}
+
+header span {
+  color: var(--muted);
+}
+
+#editor {
+  flex: 1;
+  width: 100%;
+  border: 0;
+}
+</style>
+</head>
+<body>
+<header>
+  <strong>Keyfold</strong>
+  <span>in the Standard Notes sandbox</span>
+  <span>themes: <span id="themes">none</span></span>
+  <span>saves: <span id="save-count">0</span></span>
+</header>
+<iframe id="editor" title="Keyfold editor"></iframe>
+<script>
+(() => {
+  const params = new URLSearchParams(location.search)
+  const base = new URL('../', location.href)
+  const asked = (params.get('layers') || '').split(',').map((key) => key.trim())
+  const themes = [
+    ...(params.get('theme') === 'none' ? [] : ['index.css']),
+    ...(asked.includes('rain') ? ['rain/index.css'] : []),
+    ...(asked.includes('scanlines') ? ['scanlines/index.css'] : []),
+  ].map((file) => new URL(file, base).href)
+
+  // The app wears the theme too.
+  for (const href of themes) {
+    const link = document.createElement('link')
+    link.rel = 'stylesheet'
+    link.media = 'screen,print'
+    link.href = href
+    document.head.append(link)
+  }
+  document.getElementById('themes').textContent = themes.length ? themes.map((url) => new URL(url).pathname).join(', ') : 'none'
+
+  // A vault with standard test vectors, never real secrets.
+  const vault = {
+    app: 'keyfold',
+    version: 1,
+    vault: {
+      entries: [
+        {
+          id: 'demo-seed',
+          kind: 'mnemonic',
+          label: 'Cold storage',
+          chain: 'Bitcoin',
+          wallet: 'Hardware wallet',
+          words: 'legal winner thank year wave sausage worth useful legal winner thank yellow'.split(' '),
+          createdOn: '2026-01-04',
+          tags: ['cold'],
+          backups: [{ id: 'demo-backup', location: 'Steel plate, home safe', verifiedOn: '2026-09-01' }],
+        },
+        {
+          id: 'demo-ssh',
+          kind: 'sshKey',
+          label: 'Relay server',
+          service: 'relay.internal',
+          account: 'deploy',
+          secret: '-----BEGIN OPENSSH PRIVATE KEY-----\nnot-a-real-key\n-----END OPENSSH PRIVATE KEY-----',
+          createdOn: '2026-03-12',
+          expiresOn: '2027-03-12',
+        },
+      ],
+      settings: {},
+    },
+  }
+
+  const iframe = document.getElementById('editor')
+  const sessionKey = crypto.randomUUID()
+  const state = {
+    note: {
+      uuid: 'note-1',
+      content_type: 'Note',
+      content: { title: 'Wallet backups', text: JSON.stringify(vault), appData: { 'org.standardnotes.sn': { locked: false } } },
+    },
+    saves: [],
+    contextMessage: null,
+  }
+  window.keyfoldHost = state
+
+  const send = (message) => iframe.contentWindow.postMessage(message, '*')
+
+  window.addEventListener('message', (event) => {
+    if (event.source !== iframe.contentWindow) return
+    let message = event.data
+    try {
+      if (typeof message === 'string') message = JSON.parse(message)
+    } catch {
+      return
+    }
+    if (!message || message.sessionKey !== sessionKey) return
+    switch (message.action) {
+      case 'stream-context-item':
+        state.contextMessage = message
+        send({ action: 'reply', original: message, data: { item: structuredClone(state.note) } })
+        break
+      case 'save-items': {
+        const item = message.data.items.find((saved) => saved.uuid === state.note.uuid)
+        if (item) {
+          state.note.content = { ...state.note.content, ...item.content }
+          state.saves.push(item.content.text)
+          document.getElementById('save-count').textContent = String(state.saves.length)
+        }
+        send({ action: 'reply', original: message, data: {} })
+        break
+      }
+      default:
+        break
+    }
+  })
+
+  // On load: register the editor with the active theme URLs, then send the
+  // themes again, as Standard Notes does.
+  iframe.addEventListener('load', () => {
+    send({
+      action: 'component-registered',
+      sessionKey,
+      componentData: {},
+      data: { uuid: 'component-1', environment: 'web', platform: 'linux', activeThemeUrls: themes },
+    })
+    send({ action: 'themes', data: { themes } })
+  })
+
+  // The sandbox Standard Notes gives third-party editors: no allow-same-origin,
+  // so the editor runs with an opaque origin.
+  iframe.setAttribute(
+    'sandbox',
+    'allow-scripts allow-top-navigation-by-user-activation allow-popups allow-modals allow-forms allow-downloads',
+  )
+  iframe.src = new URL('/keyfold/', location.href).href
+})()
+</script>
+</body>
+</html>

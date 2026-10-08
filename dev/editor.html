@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Plugin editor</title>
+<!--
+  A stand-in for a third-party Standard Notes editor, framed by preview.html.
+  Like a real plugin it only knows the theme through the stylesheets it is
+  sent, and styles itself with --sn-stylekit-* variables (with light
+  fallbacks for when it is opened on its own).
+
+    ?theme=<url>&theme=<url>   theme stylesheets to load, in order
+  The parent can also send { action: 'themes', data: { themes: [urls] } }.
+-->
+<style>
+:root {
+  --bg: var(--sn-stylekit-background-color, #ffffff);
+  --fg: var(--sn-stylekit-foreground-color, #1c1d21);
+  --editor-bg: var(--sn-stylekit-editor-background-color, var(--bg));
+  --editor-fg: var(--sn-stylekit-editor-foreground-color, var(--fg));
+  --panel: var(--sn-stylekit-secondary-background-color, #eceef1);
+  --contrast: var(--sn-stylekit-contrast-background-color, #f3f4f6);
+  --border: var(--sn-stylekit-border-color, #dde0e5);
+  --muted: var(--sn-stylekit-neutral-color, #6d7179);
+  --accent: var(--sn-stylekit-info-color, #0a6cd4);
+  --accent-fg: var(--sn-stylekit-info-contrast-color, #ffffff);
+  --success: var(--sn-stylekit-success-color, #0a7a63);
+  --sans: var(--sn-stylekit-sans-serif-font, system-ui, sans-serif);
+  --mono: var(--sn-stylekit-monospace-font, ui-monospace, Menlo, Consolas, monospace);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg);
+  color: var(--fg);
+  font: 13px/1.45 var(--sans);
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border);
+  background-color: var(--panel);
+}
+
+.toolbar button {
+  min-width: 30px;
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background-color: transparent;
+  color: var(--fg);
+  font: inherit;
+  cursor: pointer;
+}
+
+.toolbar button:hover {
+  border-color: var(--border);
+  background-color: var(--contrast);
+}
+
+.toolbar .sep {
+  width: 1px;
+  height: 18px;
+  margin: 0 4px;
+  background-color: var(--border);
+}
+
+.mode {
+  display: flex;
+  margin-left: auto;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.toolbar .mode button {
+  border: 0;
+  border-radius: 0;
+}
+
+.toolbar .mode button[aria-pressed="true"] {
+  background-color: var(--accent);
+  color: var(--accent-fg);
+}
+
+main {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+
+textarea,
+#rendered {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  padding: 14px 16px;
+  overflow: auto;
+  background-color: var(--editor-bg);
+  color: var(--editor-fg);
+}
+
+textarea {
+  border: 0;
+  outline: none;
+  resize: none;
+  font: 13px/1.65 var(--mono);
+}
+
+#rendered {
+  font: 14px/1.6 var(--sans);
+}
+
+#rendered h1 {
+  margin: 0 0 8px;
+  font-size: 19px;
+}
+
+#rendered p,
+#rendered li {
+  margin: 0 0 6px;
+}
+
+#rendered code {
+  padding: 1px 5px;
+  border-radius: 3px;
+  background-color: var(--contrast);
+  color: var(--accent);
+  font: 12px var(--mono);
+}
+
+[hidden] {
+  display: none !important;
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 5px 12px;
+  border-top: 1px solid var(--border);
+  background-color: var(--panel);
+  color: var(--muted);
+  font-size: 11.5px;
+}
+
+.status .saved {
+  margin-left: auto;
+  color: var(--success);
+}
+</style>
+<script>
+// Loads the theme stylesheets the way a plugin does: one <link> per URL,
+// http(s) only, replacing the previous set.
+(() => {
+  const apply = (urls) => {
+    const wanted = urls.filter((url) => typeof url === 'string' && /^https?:\/\//i.test(url))
+    for (const link of document.querySelectorAll('link[data-sn-theme]')) {
+      if (!wanted.includes(link.getAttribute('href'))) link.remove()
+    }
+    const loads = wanted.map((url) => {
+      const existing = [...document.querySelectorAll('link[data-sn-theme]')].find((link) => link.getAttribute('href') === url)
+      if (existing) return Promise.resolve()
+      const link = document.createElement('link')
+      link.rel = 'stylesheet'
+      link.href = url
+      link.setAttribute('data-sn-theme', '')
+      if (!document.body) link.setAttribute('blocking', 'render')
+      const load = new Promise((resolve) => (link.onload = link.onerror = resolve))
+      document.head.appendChild(link)
+      return load
+    })
+    Promise.all(loads).then(() => {
+      document.documentElement.dataset.themes = String(wanted.length)
+    })
+  }
+  apply(new URLSearchParams(location.search).getAll('theme'))
+  addEventListener('message', (event) => {
+    if (event.source !== parent || parent === window) return
+    const message = event.data
+    if (message && message.action === 'themes' && Array.isArray(message.data?.themes)) apply(message.data.themes)
+  })
+})()
+</script>
+</head>
+<body>
+<div class="toolbar" role="toolbar" aria-label="Formatting">
+  <button type="button" data-wrap="**" aria-label="Bold"><b>B</b></button>
+  <button type="button" data-wrap="_" aria-label="Italic"><i>I</i></button>
+  <button type="button" data-wrap="`" aria-label="Code">&lt;/&gt;</button>
+  <span class="sep" aria-hidden="true"></span>
+  <button type="button" data-prefix="# " aria-label="Heading">H</button>
+  <button type="button" data-prefix="- " aria-label="List">&bull; List</button>
+  <div class="mode" role="group" aria-label="Mode">
+    <button type="button" id="mode-edit" aria-pressed="true">Edit</button>
+    <button type="button" id="mode-view" aria-pressed="false">Preview</button>
+  </div>
+</div>
+<main>
+  <textarea id="text" aria-label="Note text" spellcheck="false"># Relay notes
+
+Keys live offline. The relay only ever sees ciphertext.
+
+- Pin the server key on first contact
+- Rotate tokens every Friday
+- Log nothing you would not publish
+
+Check the host key with `ssh-keygen -lf` before the first login.</textarea>
+  <div id="rendered" hidden></div>
+</main>
+<div class="status">
+  <span>Markdown</span>
+  <span id="words"></span>
+  <span class="saved">Saved</span>
+</div>
+<script>
+(() => {
+  const text = document.getElementById('text')
+  const rendered = document.getElementById('rendered')
+  const words = document.getElementById('words')
+  const count = () => (words.textContent = `${text.value.split(/\s+/).filter(Boolean).length} words`)
+  text.addEventListener('input', count)
+  count()
+
+  for (const button of document.querySelectorAll('[data-wrap], [data-prefix]')) {
+    button.addEventListener('click', () => {
+      const { selectionStart: start, selectionEnd: end, value } = text
+      if (button.dataset.wrap) {
+        const mark = button.dataset.wrap
+        text.setRangeText(mark + value.slice(start, end) + mark, start, end, 'end')
+      } else {
+        const lineStart = value.lastIndexOf('\n', start - 1) + 1
+        text.setRangeText(button.dataset.prefix, lineStart, lineStart, 'end')
+      }
+      text.focus()
+      count()
+    })
+  }
+
+  // A tiny Markdown subset, enough to show headings, lists and code.
+  const render = () => {
+    rendered.replaceChildren()
+    let list = null
+    for (const line of text.value.split('\n')) {
+      if (!line.trim()) {
+        list = null
+        continue
+      }
+      let element
+      if (line.startsWith('# ')) element = document.createElement('h1')
+      else if (line.startsWith('- ')) {
+        if (!list) rendered.append((list = document.createElement('ul')))
+        element = document.createElement('li')
+        list.append(element)
+      } else element = document.createElement('p')
+      const content = line.replace(/^(# |- )/, '')
+      content.split('`').forEach((part, index) => {
+        if (index % 2) {
+          const code = document.createElement('code')
+          code.textContent = part
+          element.append(code)
+        } else element.append(part)
+      })
+      if (element.tagName !== 'LI') {
+        list = null
+        rendered.append(element)
+      }
+    }
+  }
+
+  const edit = document.getElementById('mode-edit')
+  const view = document.getElementById('mode-view')
+  const setMode = (preview) => {
+    if (preview) render()
+    rendered.hidden = !preview
+    text.hidden = preview
+    edit.setAttribute('aria-pressed', String(!preview))
+    view.setAttribute('aria-pressed', String(preview))
+  }
+  edit.addEventListener('click', () => setMode(false))
+  view.addEventListener('click', () => setMode(true))
+})()
+</script>
+</body>
+</html>
