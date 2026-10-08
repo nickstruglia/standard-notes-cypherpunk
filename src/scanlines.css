@@ -8,9 +8,12 @@
 
   Keyed to #items-column, which exists only in the main app, so editor
   iframes (which load the same stylesheet) get nothing. The overlay ignores
-  the pointer and never animates. Each dark line is 1px every 3px at 5%
-  black, which dims the page by under 2% on average: too little to change
-  text contrast in any meaningful way.
+  the pointer and never animates.
+
+  On a near-black theme, darkening alone is invisible, so each 3px band is a
+  dark 1px gap and a faintly lit phosphor row, with a soft glow in the middle
+  of the screen and darker corners. The gaps cover a third of each glyph's
+  rows, so text keeps well over its WCAG contrast.
 */
 
 @media screen {
@@ -21,8 +24,14 @@
     z-index: 2147483647;
     pointer-events: none;
     background-image:
-      repeating-linear-gradient(to bottom, rgb(0 0 0 / 0.05) 0 1px, transparent 1px 3px),
-      radial-gradient(ellipse 120% 100% at 50% 50%, transparent 65%, rgb(0 0 0 / 0.07));
+      repeating-linear-gradient(
+        to bottom,
+        rgb(0 0 0 / 0.3) 0 1px,
+        rgb(140 255 170 / 0.04) 1px 2px,
+        transparent 2px 3px
+      ),
+      radial-gradient(ellipse 120% 100% at 50% 45%, rgb(0 255 65 / 0.04), transparent 65%),
+      radial-gradient(ellipse 125% 110% at 50% 50%, transparent 55%, rgb(0 0 0 / 0.4));
   }
 
   /* People who need more contrast or use forced colors get a clean screen. */
