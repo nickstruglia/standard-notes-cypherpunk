@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --ignore-scripts
+      # Builds dist/, then checks the stylesheets, manifests, zips and import file.
+      - run: npm test
+      - run: npx playwright install --with-deps chromium
+      # The e2e tests frame a local build of the Keyfold editor at the commit
+      # pinned in scripts/keyfold.mjs. Read the pin from there so the cache key
+      # can't drift from it.
+      - id: keyfold
+        run: >-
+          node --input-type=module -e "const { KEYFOLD_COMMIT } = await import('./scripts/keyfold.mjs');
+          console.log('commit=' + KEYFOLD_COMMIT)" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v4
+        with:
+          path: |
+            .cache/keyfold/dist
+            .cache/keyfold/.keyfold-built
+          key: keyfold-${{ steps.keyfold.outputs.commit }}
+      - run: npm run keyfold
+      # The live suite (npm run test:live) needs the real Standard Notes app and
+      # the network, so it is run by hand, not here.
+      - run: npm run test:e2e
+        env:
+          CI: true
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: test-results/
+          if-no-files-found: ignore
+          retention-days: 7

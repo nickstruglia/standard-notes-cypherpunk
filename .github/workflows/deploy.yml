@@ -1,12 +1,15 @@
 name: Deploy to GitHub Pages
 
-# Publishes the themes, their manifests, the desktop app's offline zips and the
-# import file from the default branch.
+# Publishes the themes, their manifests, the desktop app's offline zips, the
+# import file and the preview page from the default branch.
 # One-time setup: Settings -> Pages -> Source: "GitHub Actions".
 #
 # Everyone who installs the theme loads whatever this workflow publishes, so
 # the build job gets read-only permissions and no dependency install scripts;
 # only the small deploy job can write to Pages.
+#
+# The manifests point at the Pages URL of the repository that runs this, so a
+# fork that enables Pages publishes a copy that installs from the fork.
 
 on:
   push:
@@ -22,6 +25,7 @@ jobs:
   build:
     if: github.ref_name == github.event.repository.default_branch
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: read
       pages: read
@@ -36,8 +40,15 @@ jobs:
       - id: pages
         uses: actions/configure-pages@v5
       - run: npm ci --ignore-scripts
+      # Without SITE_URL, so the manifests are checked against package.json's
+      # homepage first.
       - run: npm test
+      # Rebuilds dist/ for this site; the zips are built here too.
       - run: npm run build
+        env:
+          SITE_URL: ${{ steps.pages.outputs.base_url }}/
+      - name: Check the manifests and import file that will be published
+        run: node --test scripts/build.test.mjs
         env:
           SITE_URL: ${{ steps.pages.outputs.base_url }}/
       - uses: actions/upload-pages-artifact@v4

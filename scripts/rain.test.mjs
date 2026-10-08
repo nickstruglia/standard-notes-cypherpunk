@@ -15,7 +15,7 @@ let rainCss
 let scanCss
 
 before(async () => {
-  if (!existsSync(builtPath('rain')) || !existsSync(builtPath('scanlines'))) await build({ check: true })
+  if (!existsSync(builtPath('rain')) || !existsSync(builtPath('scanlines'))) await build()
   rainCss = await readFile(builtPath('rain'), 'utf8')
   scanCss = await readFile(builtPath('scanlines'), 'utf8')
 })
