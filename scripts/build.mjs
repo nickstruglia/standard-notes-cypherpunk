@@ -1,15 +1,16 @@
-// Builds the published themes into dist/ and their install manifests into ext/.
+// Builds the published themes into dist/: for each theme its stylesheet,
+// manifest (ext.json) and the zip the desktop app keeps for offline use, plus
+// cypherpunk-import.json, a Standard Notes backup file holding all three
+// themes.
 //
-//   node scripts/build.mjs           build dist/ and write ext/*.json
-//   node scripts/build.mjs --check   build dist/ and fail if ext/*.json is out of date
-//
-// Standard Notes' web app may only fetch manifests from a few hosts (its
-// Content Security Policy allows raw.githubusercontent.com but not GitHub
-// Pages), so the manifests are committed in ext/ and installed from GitHub's
-// raw file host. The stylesheets themselves can load from anywhere and are
-// served from GitHub Pages, which sends them as text/css.
+// The import file exists because the web app cannot install a plugin from a
+// URL on GitHub: its Content Security Policy blocks GitHub Pages, and it sends
+// the request with credentials, which GitHub's wildcard CORS header does not
+// allow. Importing a backup creates the same item that installing from a URL
+// would, and works on every platform.
 import { existsSync } from 'node:fs'
 import { copyFile, mkdir, readFile, writeFile } from 'node:fs/promises'
+import { createHash } from 'node:crypto'
 import { pathToFileURL } from 'node:url'
 import { deflateRawSync, crc32 } from 'node:zlib'
 import { assets } from './rain-svg.mjs'
@@ -23,9 +24,7 @@ const repoUrl = pkg.repository.url.replace(/^git\+/, '').replace(/\.git$/, '')
 // The deploy workflow passes the GitHub Pages URL, so forks publish manifests
 // that point at their own copy.
 export const SITE_URL = slash(process.env.SITE_URL || pkg.homepage)
-export const RAW_URL = slash(
-  process.env.RAW_URL || `${repoUrl.replace('https://github.com/', 'https://raw.githubusercontent.com/')}/main`,
-)
+export const IMPORT_FILE = 'cypherpunk-import.json'
 
 export const THEMES = [
   {
@@ -76,7 +75,7 @@ export const manifest = (theme) => ({
   description: theme.description,
   url: `${SITE_URL}${theme.dir}index.css`,
   download_url: `${SITE_URL}${theme.dir}${theme.zip}`,
-  latest_url: `${RAW_URL}ext/${theme.key}.json`,
+  latest_url: `${SITE_URL}${theme.dir}ext.json`,
   marketing_url: repoUrl,
   ...(theme.layerable ? { layerable: true } : {}),
   dock_icon: theme.dock_icon,
@@ -164,14 +163,51 @@ export const zip = (files) => {
 
 const json = (value) => JSON.stringify(value, null, 2) + '\n'
 
-export const build = async ({ check = false } = {}) => {
-  const stale = []
+/** Name-based UUID (version 5), so importing the file twice targets the same items. */
+const uuid = (name) => {
+  const namespace = Buffer.from('6ba7b8119dad11d180b400c04fd430c8', 'hex') // RFC 4122 URL namespace
+  const hash = createHash('sha1').update(namespace).update(name).digest()
+  hash[6] = (hash[6] & 0x0f) | 0x50
+  hash[8] = (hash[8] & 0x3f) | 0x80
+  const hex = hash.subarray(0, 16).toString('hex')
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`
+}
+
+/**
+ * A decrypted Standard Notes backup containing one theme item per theme, with
+ * the same content the app stores when it installs a plugin from its manifest.
+ */
+export const importFile = () => {
+  const date = '2026-01-01T00:00:00.000Z'
+  return {
+    version: '004',
+    items: THEMES.map((theme) => {
+      const ext = manifest(theme)
+      return {
+        uuid: uuid(`${repoUrl}#${theme.identifier}`),
+        content_type: ext.content_type,
+        created_at: date,
+        updated_at: date,
+        content: {
+          area: ext.area,
+          name: ext.name,
+          package_info: ext,
+          valid_until: new Date(0).toISOString(),
+          hosted_url: ext.url,
+          references: [],
+          appData: {},
+        },
+      }
+    }),
+  }
+}
+
+export const build = async () => {
   for (const theme of THEMES) {
     const source = await readFile(path(theme.src), 'utf8')
     const banner = `/*! ${theme.name} ${pkg.version} | MIT License | ${repoUrl} */\n`
     const css = banner + inline(source, theme.src)
     validate(css, theme.src)
-    const ext = manifest(theme)
     const zipped = zip([
       { name: 'index.css', data: Buffer.from(css) },
       {
@@ -185,36 +221,24 @@ export const build = async ({ check = false } = {}) => {
     const dir = path(`dist/${theme.dir}`)
     await mkdir(dir, { recursive: true })
     await writeFile(new URL('index.css', dir), css)
-    await writeFile(new URL('ext.json', dir), json(ext))
+    await writeFile(new URL('ext.json', dir), json(manifest(theme)))
     await writeFile(new URL(theme.zip, dir), zipped)
-
-    const committed = path(`ext/${theme.key}.json`)
-    if (check) {
-      const current = existsSync(committed) ? await readFile(committed, 'utf8') : ''
-      if (current !== json(ext)) stale.push(`ext/${theme.key}.json`)
-    } else {
-      await mkdir(path('ext'), { recursive: true })
-      await writeFile(committed, json(ext))
-    }
   }
+  await writeFile(path(`dist/${IMPORT_FILE}`), json(importFile()))
 
   // The site's front page is the preview: a mock of the Standard Notes layout
-  // wearing the theme, with the install links.
+  // wearing the theme, with the install instructions.
   for (const [from, to] of [
     ['dev/preview.html', 'dist/index.html'],
     ['dev/editor.html', 'dist/editor.html'],
   ]) {
     if (existsSync(path(from))) await copyFile(path(from), path(to))
   }
-
-  if (stale.length) {
-    throw new Error(`${stale.join(', ')} out of date. Run "npm run build" and commit the result.`)
-  }
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   try {
-    await build({ check: process.argv.includes('--check') })
+    await build()
     console.log(`Built ${THEMES.length} themes for ${SITE_URL}`)
   } catch (error) {
     console.error(error.message)
