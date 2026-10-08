@@ -1,0 +1,240 @@
+/*
+  Cypherpunk Rain: digital rain behind the Standard Notes sidebar and note list.
+  A layer theme: it stacks over Cypherpunk or any other theme and only borrows
+  that theme's colors.
+
+  Elements this layer draws on (the Scanlines layer uses html::after):
+    html::before            far rain, wide screens
+    body::before            near rain, wide screens
+    #items-column::before   rain on phones, inside the note list
+    #items-column::after    static fade over it on phones
+
+  Standard Notes loads the same stylesheet in every editor iframe. Everything
+  here is keyed to #items-column, which exists only in the main app, so nothing
+  draws inside editors, and the editor column itself stays solid.
+
+  Each rain field is one tile taller than the viewport and slides down by
+  exactly one tile height, so the loop is seamless and only `transform`
+  animates (the compositor runs it without repainting). The tiles come from
+  scripts/rain-svg.mjs; the pixel heights below must match tileSize() there
+  (rain.test.mjs checks them).
+*/
+
+@media screen {
+  @supports (background: color-mix(in srgb, red 50%, transparent)) {
+    body:has(#items-column) {
+      /* How much of each panel's own color stays over the rain. */
+      --cp-rain-panel: 72%;
+    }
+
+    /* Each tile is inlined once. Without `content` these generate nothing;
+       the rules below decide which elements draw. */
+    html:has(#items-column)::before {
+      background-image: url("inline:rain-far");
+    }
+
+    body:has(#items-column)::before,
+    #items-column::before {
+      background-image: url("inline:rain-near");
+    }
+
+    /* ---- Wide screens: two full-viewport layers behind the app ---------- */
+
+    @media (min-width: 800px) {
+      html:has(#items-column)::before,
+      body:has(#items-column)::before {
+        content: "";
+        position: fixed;
+        left: 0;
+        width: 100%;
+        /* z-index 0 at the start of the document: every positioned app
+           element comes later in tree order and paints on top. */
+        z-index: 0;
+        pointer-events: none;
+        background-repeat: repeat;
+        will-change: transform;
+      }
+
+      html:has(#items-column)::before {
+        top: -630px;
+        height: calc(100% + 630px);
+        opacity: 0.32;
+        animation: cp-rain-far 34s linear infinite;
+      }
+
+      body:has(#items-column)::before {
+        top: -720px;
+        height: calc(100% + 720px);
+        opacity: 0.5;
+        animation: cp-rain-near 21s linear infinite;
+      }
+
+      /* The app's outer view paints a full-screen background; clear it so the
+         rain shows wherever a panel lets it through. */
+      body:has(#items-column) .main-ui-view {
+        background-color: transparent;
+      }
+
+      /* Sidebar and note list: their own theme color, partly see-through.
+         The overlaid gradient keeps the top (search, titles) solid and fades
+         the rain in below it and out near the bottom. It sits on the panel,
+         not the moving layer, so it stays put while the rain falls. */
+      body:has(#items-column) #navigation {
+        --cp-rain-color: var(--navigation-column-background-color);
+      }
+
+      body:has(#items-column) #items-column {
+        --cp-rain-color: var(--items-column-background-color);
+      }
+
+      body:has(#items-column) #navigation,
+      body:has(#items-column) #items-column {
+        background-color: color-mix(in srgb, var(--cp-rain-color) var(--cp-rain-panel), transparent);
+        background-image: linear-gradient(
+          var(--cp-rain-color) 3.25rem,
+          transparent 13rem,
+          transparent calc(100% - 12rem),
+          color-mix(in srgb, var(--cp-rain-color) 80%, transparent)
+        );
+      }
+
+      body:has(#items-column) #navigation-content,
+      body:has(#items-column) #notes-scrollable {
+        background-color: transparent;
+      }
+
+      /* The sidebar's sticky search row normally inherits the sidebar color;
+         keep it solid so tags scrolling under it stay hidden. */
+      body:has(#items-column) #navigation-content > .sticky {
+        background-color: var(--navigation-column-background-color);
+      }
+    }
+
+    /* ---- Phones: one layer, drawn inside the note list ------------------ */
+
+    /* On phones the panes are stacked, with the note list covering the
+       sidebar, so a see-through list would show the sidebar's text. Instead
+       the rain goes inside the list, above its background and below its
+       content (negative z-index in its own stacking context). One small
+       layer that slides away with the list, and the panels stay solid. */
+    @media (max-width: 799.98px) {
+      #items-column {
+        isolation: isolate;
+        overflow: hidden;
+      }
+
+      #items-column::before,
+      #items-column::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        width: 100%;
+        z-index: -1;
+        pointer-events: none;
+      }
+
+      #items-column::before {
+        top: -720px;
+        height: calc(100% + 720px);
+        background-repeat: repeat;
+        opacity: 0.16;
+        will-change: transform;
+        animation: cp-rain-near 21s linear infinite;
+      }
+
+      #items-column::after {
+        top: 0;
+        height: 100%;
+        background-image: linear-gradient(
+          var(--items-column-background-color) 7rem,
+          transparent 15rem,
+          transparent calc(100% - 9rem),
+          color-mix(in srgb, var(--items-column-background-color) 80%, transparent)
+        );
+      }
+
+      #items-column #notes-scrollable {
+        background-color: transparent;
+      }
+    }
+
+    /* With a note open, the phone layout's editor covers the whole list:
+       stop the rain instead of animating it unseen. */
+    @media (max-width: 767px) {
+      body:has(#editor-column) #items-column::before {
+        animation-play-state: paused;
+      }
+    }
+
+    /* Light themes: phosphor green washes out on white, so the rain needs
+       more strength there to read at the same level. */
+    @container style(--sn-stylekit-theme-type: light) {
+      html:has(#items-column)::before {
+        opacity: 0.6;
+      }
+
+      body:has(#items-column)::before {
+        opacity: 0.9;
+      }
+
+      #items-column::before {
+        opacity: 0.3;
+      }
+    }
+
+    @keyframes cp-rain-far {
+      from {
+        transform: translate3d(0, 0, 0);
+      }
+      to {
+        transform: translate3d(0, 630px, 0);
+      }
+    }
+
+    @keyframes cp-rain-near {
+      from {
+        transform: translate3d(0, 0, 0);
+      }
+      to {
+        transform: translate3d(0, 720px, 0);
+      }
+    }
+
+    /* ---- Preferences ---------------------------------------------------- */
+
+    /* Reduced motion: the rain stays, frozen. */
+    @media (prefers-reduced-motion: reduce) {
+      html:has(#items-column)::before,
+      body:has(#items-column)::before,
+      #items-column::before {
+        animation: none;
+        will-change: auto;
+      }
+    }
+
+    /* Saving data, reducing transparency, forced colors or asking for more
+       contrast: no rain, and the panels go back to solid. */
+    @media (prefers-reduced-data: reduce), (prefers-reduced-transparency: reduce), (forced-colors: active), (prefers-contrast: more) {
+      html:has(#items-column)::before,
+      body:has(#items-column)::before,
+      #items-column::before,
+      #items-column::after {
+        content: none;
+        animation: none;
+      }
+
+      body:has(#items-column) {
+        --cp-rain-panel: 100%;
+      }
+
+      body:has(#items-column) .main-ui-view {
+        background-color: var(--editor-header-bar-background-color);
+      }
+
+      body:has(#items-column) #navigation,
+      body:has(#items-column) #items-column {
+        background-image: none;
+      }
+    }
+  }
+}
