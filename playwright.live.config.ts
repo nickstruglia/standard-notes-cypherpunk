@@ -4,9 +4,8 @@ import { defineConfig, devices } from '@playwright/test'
 // no account needed). Needs a network connection, so it is not part of CI:
 // run it with `npm run test:live` before a release.
 //
-// Requests for the published URLs (GitHub Pages and raw.githubusercontent.com)
-// are answered from the local build, so this tests the files in dist/ and ext/
-// before they are deployed.
+// Requests for the published GitHub Pages URLs are answered from the local
+// build, so this tests the files in dist/ before they are deployed.
 const proxy = process.env.HTTPS_PROXY ? { server: process.env.HTTPS_PROXY } : undefined
 
 export default defineConfig({
