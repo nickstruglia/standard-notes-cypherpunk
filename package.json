@@ -1,0 +1,30 @@
+{
+  "name": "standard-notes-cypherpunk",
+  "version": "1.0.0",
+  "description": "A green-phosphor cypherpunk theme for Standard Notes, with an optional digital-rain layer.",
+  "author": "Nicholas Truglia (https://github.com/nickstruglia)",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "homepage": "https://nickstruglia.github.io/standard-notes-cypherpunk/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nickstruglia/standard-notes-cypherpunk.git"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "node scripts/build.mjs --check && node --test \"scripts/*.test.mjs\"",
+    "test:e2e": "playwright test",
+    "test:live": "playwright test -c playwright.live.config.ts",
+    "keyfold": "node scripts/keyfold.mjs",
+    "screenshots": "node scripts/screenshots.mjs",
+    "serve": "node scripts/serve.mjs",
+    "check": "npm test && npm run test:e2e"
+  },
+  "sn": {
+    "main": "index.css"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.56.1"
+  }
+}
